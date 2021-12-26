@@ -68,9 +68,9 @@ class CheckFileDownloadPermissions(Service):
 
         user_permissions = user.get_all_permissions()
         if file.content_type.name == 'ticket':
-            file_permissions = set(['tickets.full_access', f'tickets.can_view_{file.content_object.category.codename}'])
+            file_permissions = set(['main.full_access', f'main.can_view_{file.content_object.category.codename}'])
         elif file.content_type.name == 'comment':
-            file_permissions = set(['tickets.full_access', f'tickets.can_view_{file.content_object.ticket.category.codename}'])
+            file_permissions = set(['main.full_access', f'main.can_view_{file.content_object.ticket.category.codename}'])
         permissions_crossing = user_permissions & file_permissions
 
         if file.content_type.name == 'ticket':
