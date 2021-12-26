@@ -1,0 +1,52 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+    <div class="container">
+        <h1 class="display-4" >Account registration</h1>
+        <p> To register an account in the helpdesk, enter your data </p>
+        {% for e in signup_form.non_field_errors %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="alert alert-dismissible alert-warning">
+                        <h4 class="alert-heading">Warning!</h4>
+                        <p class="mb-0">{{ e }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% for field in signup_form %}
+                {% if field.errors %}
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="alert alert-dismissible alert-warning">
+                                <h4 class="alert-heading">Warning!</h4>
+                                <p class="mb-0">{{ field.errors }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        <form action="" method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-12">
+                    {% for field in signup_form %}
+                        <div>
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="form_actions" style="margin-top: 3em">
+                <div class="row">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary" style="width: 15em">
+                            Sign Up
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}

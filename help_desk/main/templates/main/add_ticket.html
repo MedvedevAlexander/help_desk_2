@@ -1,0 +1,55 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+    <div class="container ticket_container" style="margin-top: 5em">
+        {% for e in form.non_field_errors %}
+            <div class="alert alert-dismissible alert-warning">
+                <h4 class="alert-heading">Warning!</h4>
+                <p class="mb-0">{{ e }}</p>
+            </div>
+        {% endfor %}
+
+        {% for field in form %}
+            {% if field.errors %}
+                <div class="alert alert-dismissible alert-warning">
+                    <h4 class="alert-heading">Warning!</h4>
+                    <p class="mb-0">{{ field.errors }}</p>
+                </div>
+            {% endif %}
+        {% endfor %}
+        <div class="row ticket_description">
+            <div class="col-12">
+                <form method="post" action="" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="col-form-label">
+                        {{ form.title.label }}
+                    </div>
+                    {{ form.title }}
+                    <div class="col-form-label">
+                        {{ form.text.label }}
+                    </div>
+                    {{ form.text }}
+                    <div class="col-form-label">
+                        {{ form.category.label }}
+                    </div>
+                    {{ form.category }}
+                    <div class="col-form-label">
+                        {{ form.priority.label }}
+                    </div>
+                    <div class="col-form-label">
+                    {{ form.priority }}
+                    </div>
+                    <div class="col-form-label">
+                        {{ file_form }}
+                    </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" style="margin-top: 5em">
+                    Create ticket
+                </button>
+            </div>
+            </form>
+        </div>
+    </div>
+    </div>
+{% endblock %}

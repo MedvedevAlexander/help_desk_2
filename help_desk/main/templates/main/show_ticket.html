@@ -1,0 +1,82 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+    <div class="container">
+        <div>
+            {{ ticket.title }}
+        </div>
+        <div>
+            {{ ticket.added_at }}
+        </div>
+        <div>
+            {{ ticket.category }}
+        </div>
+        <div>
+            {{ ticket.text }}
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <div class="jumbotron">
+            <h1 class="display-5"> {{ ticket.title }}</h1>
+                    <div>Ticket status {{ ticket.status }}</div>
+                    <div>Ticket author {{ ticket.author }}</div>
+                    <div>{{ ticket.added_at }}</div>
+                    <div> Priority: {{ ticket.priority }}</div>
+                    <div> Category: {{ ticket.category }}</div>
+                    <div> <strong> Ticket description: </strong></div>
+                    <div> {{ ticket.text }}</div>
+                    <div class="ticket_attachments" style="display: flex; justify-content: flex-end">
+                        {% for file in ticket.files.all %}
+                            <span class="attached_file" style="margin-right: 1em">
+                                <a href="{{ MEDIA_URL}}{{ file.file }}" download>
+                                    <img src="/static/help_desk/images/file_pic.gif">
+                                    <span>{{ file.file_name }} ({{ file.file_size | filesizeformat}})</span>
+                                </a>
+                            </span>
+                        {% endfor %}
+                    </div>
+        </div>
+            </div>
+        </div>
+        <div class="row comment_form" style="margin-bottom: 3em">
+            <div class="col-12">
+                <form method="post" action="" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ comment_form.text }}
+                    {{ file_form.file }}
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" style="margin-top: 2em">
+                            Leave a message
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% for comment in comments.all %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="card border-primary mb-3">
+                        <div class="card-header" style="display: flex; justify-content: space-between">
+                            <span> {{ comment.user }} </span>
+                            <span> Отправлено {{ comment.added_at }}</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">{{ comment.text }}</p>
+                            <div class="comment_attachments" style="display: flex; justify-content: flex-end">
+                            {% for file in comment.files.all %}
+                                <span class="attached_file" style="margin-right: 1em">
+                                    <a href="{{ MEDIA_URL}}{{ file.file }}" download>
+                                        <img src="/static/help_desk/images/file_pic.gif">
+                                        <span>{{ file.file_name }} ({{ file.file_size | filesizeformat}})</span>
+                                    </a>
+                                </span>
+                            {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container news_container">
+    {% for n in current_page %}
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-primary mb-3">
+                    <div class="card-header" style="display: flex; justify-content: space-between"; >
+                        <span> Технические работы </span>
+                        <span> {{ n.added_at }}</span>
+                    </div>
+                    <div class="card-body">
+                        <h4 class="card-title">{{ n.title }}</h4>
+                        <p class="card-text"> {{ n.text }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    {% if paginator.num_pages >= 2 %}
+        <div>
+            <div class="row news_paginator">
+                <div class="col-12">
+                    <ul class="pagination pagination-lg">
+                        {% if current_page.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                   href="{% url 'main:main_page' %}?page={{ current_page.previous_page_number }}">&laquo;</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link"
+                                   href="{% url 'main:main_page' %}?page={{ current_page_number }}">&laquo;</a>
+                            </li>
+                        {% endif %}
+                        {% for num_page in page_range %}
+                            {% if num_page == current_page_number %}
+                                <li class="page-item active">
+                                    <a class="page-link" href="{% url 'main:main_page' %}?page={{ num_page }}">{{ num_page }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="{% url 'main:main_page' %}?page={{ num_page }}">{{ num_page }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        {% if current_page.has_next %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                   href="{% url 'main:main_page' %}?page={{ current_page.next_page_number }}">&raquo;</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link"
+                                   href="{% url 'main:main_page' %}?page={{ current_page_number }}">&raquo;</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
