@@ -14,4 +14,5 @@ urlpatterns = [
     path('account/signup/', views.signup_page, name='signup_page'),
     path('accounts/useraccount/<int:pk>/',  views.UserAccountView.as_view(), name='user_account'),
     re_path(r'^media/.+', views.check_file_permissions, name='check_file_permissions'),
+    path('500/', views.http_response_server_error, name='http_500')
 ]

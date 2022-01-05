@@ -2,17 +2,20 @@ import os
 import re
 from django.shortcuts import render, HttpResponseRedirect, get_object_or_404
 from django.core.paginator import Paginator
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.contrib.auth import views as auth_views
 from django.views.generic import View
 from django_sendfile import sendfile
+from django.conf import settings
+from guardian.shortcuts import assign_perm
+from guardian.core import ObjectPermissionChecker
+from django.core.exceptions import PermissionDenied
 
 from .models import News, Ticket, File, Comment
 from .forms import TicketForm, UploadFileForm, CommentForm, SignupForm, UserAccountForm, UserAccountAdditionalForm
-from .services import check_file_download_permissions, check_ticket_view_permissions
 
 
 def test(request, *args, **kwargs):
@@ -81,9 +84,24 @@ def create_ticket(request, *args, **kwargs):
         form = TicketForm(ticket_form_data)
         if form.is_valid():
             ticket = form.save()
+            assign_perm(perm='view_ticket', user_or_group=request.user, obj=ticket)
+            try:
+                assign_perm(perm='view_ticket', user_or_group=Group.objects.
+                            get(name=f'{ticket.category.codename}_admins'), obj=ticket)
+            except Group.DoesNotExist as e:
+                url = reverse('main:http_500')
+                return HttpResponseRedirect(url)
             for file in request.FILES.getlist('file'):
                 file_obj = File.objects.create(file=file, file_name=file.name, file_size=file.size,
                                                content_object=ticket)
+                assign_perm(perm='view_file', user_or_group=request.user, obj=file_obj)
+                try:
+                    assign_perm(perm='view_file',
+                                user_or_group=Group.objects.get(name=f'{ticket.category.codename}_admins'),
+                                obj=file_obj)
+                except Group.DoesNotExist as e:
+                    url = reverse('main:http_500')
+                    return HttpResponseRedirect(url)
             url = reverse('main:show_ticket', args=[ticket.id])
             return HttpResponseRedirect(url)
 
@@ -111,7 +129,9 @@ def show_ticket(request, *args, **kwargs):
     ticket_id = kwargs['ticket_id']
     ticket_obj = get_object_or_404(Ticket.objects.select_related('author', 'category', 'priority', 'status').
                                    prefetch_related('files'), pk=ticket_id)
-    check_ticket_view_permissions(ticket_id, request.user.id)
+    perm_checker = ObjectPermissionChecker(request.user)
+    if not perm_checker.has_perm('view_ticket', ticket_obj):
+        raise PermissionDenied
     comments = Comment.objects.select_related('user').prefetch_related('files').filter(ticket=ticket_obj)
 
     if request.method == 'POST':
@@ -126,6 +146,14 @@ def show_ticket(request, *args, **kwargs):
             for file in request.FILES.getlist('file'):
                 file_obj = File.objects.create(file=file, file_name=file.name, file_size=file.size,
                                                content_object=comment)
+                assign_perm(perm='view_file', user_or_group=request.user, obj=file_obj)
+                try:
+                    assign_perm(perm='view_file',
+                                user_or_group=Group.objects.get(name=f'{ticket_obj.category.codename}_admins'),
+                                obj=file_obj)
+                except Group.DoesNotExist as e:
+                    url = reverse('main:http_500')
+                    return HttpResponseRedirect(url)
         url = reverse('main:show_ticket', args=[kwargs['ticket_id']])
         return HttpResponseRedirect(url)
     else:
@@ -174,6 +202,14 @@ class UserAccountView(View):
 
 @login_required
 def check_file_permissions(request, *args, **kwargs):
-    check_file_download_permissions(file_link=request.path, user=request.user)
+    perm_checker = ObjectPermissionChecker(request.user)
+    file_obj = get_object_or_404(File, file=request.path[7:])
+    if not perm_checker.has_perm('view_file', file_obj):
+        raise PermissionDenied
     send = sendfile(request, filename=f'{os.getenv("SENDFILE_ROOT")}{request.path[7:]}', attachment=True)
     return send
+
+
+def http_response_server_error(request, *args, **kwargs):
+
+    return render(request, '500.html', status=500)

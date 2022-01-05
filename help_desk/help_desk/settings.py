@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'django_sendfile',
     'rest_framework',
     'corsheaders',
-    'debug_toolbar'
+    'debug_toolbar',
+    'guardian'
 ]
 
 MIDDLEWARE = [
@@ -158,3 +159,8 @@ SENDFILE_URL = '/data'
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend', # this is default
+    'guardian.backends.ObjectPermissionBackend',
+)
