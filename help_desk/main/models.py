@@ -32,6 +32,9 @@ class TicketCategory(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name_plural = 'Категории заявок'
+
 
 class TicketStatus(models.Model):
     name = models.TextField(max_length=255)
