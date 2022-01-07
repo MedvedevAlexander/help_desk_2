@@ -7,3 +7,4 @@ python-dotenv==0.19.2
 djangorestframework==3.13.0
 django-cors-headers==3.10.1
 django-guardian==2.4.0
+django-grappelli==2.15.4
