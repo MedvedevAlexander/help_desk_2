@@ -139,7 +139,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = ''
+STATIC_ROOT = 'staticfiles/static'
 STATICFILES_DIRS = (os.path.join('static'), )
 
 # MEDIA_ROOT - директория для сохранения загруженных пользователем файлов

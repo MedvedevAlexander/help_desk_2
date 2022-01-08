@@ -1,6 +1,7 @@
 # help_desk project
 .idea/
 help_desk/data/
+help_desk/staticfiles/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

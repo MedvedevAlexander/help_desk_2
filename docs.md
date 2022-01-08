@@ -92,3 +92,18 @@ ticket_obj = get_object_or_404(Ticket.objects.select_related('author', 'category
 3. Группы администраторов для каждой категории заявок создаются при помощи сигнала `create_group`
 4. Для хранения прав доступа используются таблицы БД `guardian_groupobjectpermission` и `guardian_userobjectpermission`
 5. Система проверки прав доступа при большом количестве запросов к ресурсу может создавать значительное количество запросов к СУБД, создавая большую нагрузку (из-за применения в модели данной библиотеки поля `GenericForeignKey`). Это можно оптимизировать в документации к библиотеке описано как. По дефолту (при небольшом количестве пользователей), это не потребуется.
+
+
+Статические файлы:
+1. Отдачу статического контента осуществляет nginx:
+```shell
+location ~ ^\/static.+\.(css|png|svg|gif|js|woff) {
+			root /home/alexander/PycharmProjects/help_desk_2/help_desk/staticfiles;
+		}
+```
+2. Статический контент хранится в `STATIC_ROOT = 'staticfiles/static'`
+3. Ссылки к статическим файлам формируются из следующего URL `STATIC_URL = '/static/'`
+4. Для размещения всех файлов из `STATICFILES_DIRS = (os.path.join('static'), )` в `STATIC_ROOT = 'staticfiles/static'` требуется выполнить команду:
+```shell
+python manage.py collectstatic
+```
