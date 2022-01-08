@@ -146,7 +146,8 @@ def show_ticket(request, *args, **kwargs):
             for file in request.FILES.getlist('file'):
                 file_obj = File.objects.create(file=file, file_name=file.name, file_size=file.size,
                                                content_object=comment)
-                assign_perm(perm='view_file', user_or_group=request.user, obj=file_obj)
+                if request.user.id != ticket_obj.author.id:
+                    assign_perm(perm='view_file', user_or_group=User.objects.get(id=ticket_obj.author.id), obj=file_obj)
                 try:
                     assign_perm(perm='view_file',
                                 user_or_group=Group.objects.get(name=f'{ticket_obj.category.codename}_admins'),
