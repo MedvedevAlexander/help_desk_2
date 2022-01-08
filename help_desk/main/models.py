@@ -24,6 +24,9 @@ class TicketPriority(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name_plural = 'Приоритеты заявок'
+
 
 class TicketCategory(models.Model):
     name = models.TextField(max_length=255)
@@ -38,6 +41,12 @@ class TicketCategory(models.Model):
 
 class TicketStatus(models.Model):
     name = models.TextField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = 'Статусы заявок'
 
 
 class Ticket(models.Model):
