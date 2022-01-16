@@ -2,6 +2,7 @@
 .idea/
 help_desk/data/
 help_desk/staticfiles/
+help_desk/main/migrations/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -7,12 +7,14 @@ from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.contrib.auth import views as auth_views
-from django.views.generic import View
+from django.views.generic import ListView
 from django_sendfile import sendfile
 from django.conf import settings
 from guardian.shortcuts import assign_perm
 from guardian.core import ObjectPermissionChecker
 from django.core.exceptions import PermissionDenied
+from django.db.models import Prefetch
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .models import News, Ticket, File, Comment
 from .forms import TicketForm, UploadFileForm, CommentForm, SignupForm, UserAccountForm, UserAccountAdditionalForm
@@ -186,19 +188,16 @@ def signup_page(request, *args, **kwargs):
     return render(request, 'main/signup_page.html', context=context)
 
 
-class UserAccountView(View):
-    def get(self, request, *args, **kwargs):
-        user_form = UserAccountForm
-        user_additional_data_form = UserAccountAdditionalForm
+class UserAccountView(LoginRequiredMixin, ListView):
+    template_name = 'main/user_account_page.html'
+    context_object_name = 'last_tickets'
+    pr1 = Prefetch('comment_ticket', queryset=Comment.objects.order_by('-added_at'))
+    queryset = Ticket.objects.select_related('category', 'priority', 'status', 'author').prefetch_related(pr1).all()[:5]
 
-        context = {
-            'user_form': user_form,
-            'user_additional_data_form': user_additional_data_form
-        }
-        return render(request, 'main/user_account_page.html', context)
-
-    def post(self, request, *args, **kwargs):
-        return
+    def dispatch(self, request, *args, **kwargs):
+        if kwargs['pk'] != request.user.id and request.user.is_authenticated:
+            raise PermissionDenied
+        return super(UserAccountView, self).dispatch(request, *args, **kwargs)
 
 
 @login_required

@@ -56,7 +56,7 @@ class Ticket(models.Model):
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='ticket_author')
     category = models.ForeignKey(TicketCategory, on_delete=models.SET_NULL, null=True, related_name='ticket_category')
     priority = models.ForeignKey(TicketPriority, on_delete=models.SET_NULL, null=True, related_name='ticket_priority')
-    status = models.ForeignKey(TicketPriority, on_delete=models.SET_NULL, null=True, related_name='ticket_status')
+    status = models.ForeignKey(TicketStatus, on_delete=models.SET_NULL, null=True, related_name='ticket_status')
     files = GenericRelation('File')
 
     def __str__(self):
@@ -112,9 +112,10 @@ class File(models.Model):
     content_object = GenericForeignKey(ct_field='content_type', fk_field='object_id')
 
 
-class UserAccount(models.Model):
+class UserProfile(models.Model):
     organization = models.CharField(max_length=255)
     city = models.CharField(max_length=255)
     position = models.CharField(max_length=255)
     phone = models.CharField(max_length=255)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='user_account')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='user_profile')
+    photo = GenericRelation('File')
