@@ -3,7 +3,7 @@ import re
 from django.shortcuts import render, HttpResponseRedirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.contrib.auth.models import User, Group
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.contrib.auth import views as auth_views
@@ -16,7 +16,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Prefetch
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from .models import News, Ticket, File, Comment
+from .models import News, Ticket, File, Comment, TicketCategory, TicketPriority
 from .forms import TicketForm, UploadFileForm, CommentForm, SignupForm, UserAccountForm, UserAccountAdditionalForm
 
 
@@ -31,18 +31,11 @@ def test(request, *args, **kwargs):
 
 
 def test_2(request, *args, **kwargs):
-    user_1 = User.objects.get(username='user_1')
-    user_2 = User.objects.get(username='user_2')
-    for i in range(6, 110):
-        if i % 2 == 0:
-            news = News.objects.create(title=f'Test news {i}',
-                                       text=f'This is random text to fill the text field. Create by user {user_1}',
-                                       author=user_1)
-        else:
-            news = News.objects.create(title=f'Test news {i}',
-                                       text=f'This is random text to fill the text field. Create by user {user_2}',
-                                       author=user_2)
-
+    am = User.objects.get(username='am')
+    category = TicketCategory.objects.get(id=1)
+    priority = TicketPriority.objects.get(id=1)
+    for ticket in range(100):
+        Ticket.objects.create(title='Тестовый тикет', text='Описание проблемы', author=am, category=category, priority=priority)
     return HttpResponse('OK')
 
 
@@ -191,13 +184,33 @@ def signup_page(request, *args, **kwargs):
 class UserAccountView(LoginRequiredMixin, ListView):
     template_name = 'main/user_account_page.html'
     context_object_name = 'last_tickets'
-    pr1 = Prefetch('comment_ticket', queryset=Comment.objects.order_by('-added_at'))
-    queryset = Ticket.objects.select_related('category', 'priority', 'status', 'author').prefetch_related(pr1).all()[:5]
 
     def dispatch(self, request, *args, **kwargs):
         if kwargs['pk'] != request.user.id and request.user.is_authenticated:
             raise PermissionDenied
         return super(UserAccountView, self).dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        pr1 = Prefetch('comment_ticket', queryset=Comment.objects.order_by('-added_at'))
+        queryset = Ticket.objects.select_related('category', 'priority', 'status', 'author').prefetch_related(pr1).filter(author=self.request.user.id)[:5]
+        return queryset
+
+
+class UserAccountTicketsListView(LoginRequiredMixin, ListView):
+    template_name = 'main/user_account_page_tickets_list.html'
+    context_object_name = 'all_tickets'
+    paginate_by = 10
+
+    def dispatch(self, request, *args, **kwargs):
+        # check access rights to the page
+        if kwargs['pk'] != request.user.id and request.user.is_authenticated:
+            raise PermissionDenied
+        return super(UserAccountTicketsListView, self).dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        pr1 = Prefetch('comment_ticket', queryset=Comment.objects.order_by('-added_at'))
+        queryset = Ticket.objects.select_related('category', 'priority', 'status', 'author').prefetch_related(pr1).filter(author=self.request.user.id)
+        return queryset
 
 
 @login_required

@@ -10,3 +10,11 @@
 .user_page_container {
     margin-top: 1em;
 }
+
+.paginator-user-tickets {
+    float: right;
+}
+
+.header-user-tickets {
+    float: left;
+}

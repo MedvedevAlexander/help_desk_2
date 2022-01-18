@@ -1,0 +1,93 @@
+{% extends 'main/user_account_page_base.html' %}
+
+{% block user_account_page_content %}
+<div class="col-9 user_page_tickets_list">
+    <div>
+        <div class="header-user-tickets">
+            <h3>Last tickets</h3>
+        </div>
+
+        <div class="paginator-user-tickets">
+                    <ul class="pagination pagination-sm">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="{% url 'main:user_account_tickets_list' request.user.id %}?page={{page_obj.previous_page_number}}">&laquo;</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#">&laquo;</a>
+                            </li>
+                        {% endif %}
+                        {% for page_num in paginator.page_range %}
+                            {% if page_num <= page_obj.number|add:3 and page_num >= page_obj.number|add:-3 %}
+                                {% if page_num == page_obj.number %}
+                                    <li class="page-item active">
+                                    <a class="page-link" href="{% url 'main:user_account_tickets_list' request.user.id %}?page={{page_num}}">{{page_num}}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{% url 'main:user_account_tickets_list' request.user.id %}?page={{page_num}}">{{page_num}}</a>
+                                    </li>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{% url 'main:user_account_tickets_list' request.user.id%}?page={{page_obj.next_page_number}}">&raquo;</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#">&raquo;</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+        </div>
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Ticket ID</th>
+                    <th>Last update</th>
+                    <th>Last responder</th>
+                    <th>Category</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in page_obj %}
+                    <tr>
+                        <td colspan="6"><a href="{% url 'main:show_ticket' t.id %}"><h4>{{t.title}}</h4></a></td>
+                    </tr>
+                    {% if t.status.name == 'Open' or t.status.name == 'Waiting for employee response' or t.status.name == 'Waiting for user response' %}
+                        <tr class="table-danger">
+                    {% elif t.status.name == "In work" %}
+                        <tr class="table-primary">
+                    {% elif t.status.name == "Closed" %}
+                        <tr class="table-success">
+                    {% elif t.status.name == "Redirected to second line" %}
+                        <tr class="table-warning">
+                    {% else %}
+                        <tr>
+                    {% endif %}
+                        <td>{{t.id}}</td>
+                        <td>
+                            {% if t.comment_ticket.first.added_at %}
+                                {{t.comment_ticket.first.added_at}}
+                            {% else %}
+                                {{t.added_at}}
+                            {% endif %}
+                        </td>
+                        <td>{{t.author.first_name}} {{t.author.last_name}}</td>
+                        <td>{{t.category}}</td>
+                        <td>{{t.priority}}</td>
+                        <td>{{t.status}}</td>
+                    </tr>
+                {% endfor %}
+
+
+            </tbody>
+
+        </table>
+    </div>
+{% endblock %}
