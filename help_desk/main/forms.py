@@ -1,12 +1,15 @@
-from django.forms import ModelForm, Textarea, HiddenInput, inlineformset_factory, Form
+from django.forms import ModelForm, Textarea, HiddenInput, inlineformset_factory, Form, FileField
 from django.core.exceptions import ValidationError
 from django import forms
 from django.contrib.auth.models import User
+from django.core.validators import FileExtensionValidator
 
 
-from .models import Ticket, Comment, UserAccount, File
+from .models import Ticket, Comment, UserProfile, File
 from .widgets import TextareaBootstrap, TextInputBootstrap, SelectBootstrap, ClearableFileInputBootstrap, \
     EmailFieldBootstrap, PasswordInputBootstrap
+from .services import del_profile_avatar
+from .validators import FileValidator
 
 
 class TicketForm(ModelForm):
@@ -38,6 +41,22 @@ class UploadFileForm(ModelForm):
     class Meta:
         model = File
         fields = ['file']
+        widgets = {
+            'file': ClearableFileInputBootstrap()
+        }
+
+
+class ProfileAvatarUploadFileForm(forms.Form):
+    file = forms.FileField(required=False, validators=[FileValidator(content_types=('image/png', 'image/jpeg'),
+                                                                     max_size=1024 * 1024)])
+
+    def save(self, avatar, user):
+        del_profile_avatar(user=user)
+        file = File.objects.create(file=avatar, file_name=avatar.name, file_size=avatar.size,
+                                   content_object=user.user_profile)
+        return file
+
+    class Meta:
         widgets = {
             'file': ClearableFileInputBootstrap()
         }
@@ -79,13 +98,29 @@ class SignupForm(forms.Form):
         return user
 
 
-class UserAccountAdditionalForm(forms.ModelForm):
-    class Meta:
-        model = UserAccount
-        fields = ['organization', 'city', 'position', 'phone']
-
-
-class UserAccountForm(forms.ModelForm):
+class UserProfileForm(ModelForm):
     class Meta:
         model = User
-        exclude = ['password']
+        fields = ['username', 'first_name', 'last_name', 'email']
+        widgets = {
+            'username': TextInputBootstrap(attrs={
+                'disabled': True
+            }),
+            'email': EmailFieldBootstrap(attrs={
+                'disabled': True
+            }),
+            'first_name': TextInputBootstrap(placeholder='Enter your name'),
+            'last_name': TextInputBootstrap(placeholder='Enter your last name')
+        }
+
+
+class UserProfileAdditionalForm(ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['organization', 'city', 'position', 'phone']
+        widgets = {
+            'organization': TextInputBootstrap(placeholder='Enter the name of you organization'),
+            'city': TextInputBootstrap(placeholder='Enter the name of your city'),
+            'position': TextInputBootstrap(placeholder='Enter your position'),
+            'phone': TextInputBootstrap(placeholder='Enter your contact phone number')
+        }

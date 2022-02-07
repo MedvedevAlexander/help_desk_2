@@ -15,9 +15,12 @@ from guardian.core import ObjectPermissionChecker
 from django.core.exceptions import PermissionDenied
 from django.db.models import Prefetch
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic.base import View
+import magic
 
 from .models import News, Ticket, File, Comment, TicketCategory, TicketPriority
-from .forms import TicketForm, UploadFileForm, CommentForm, SignupForm, UserAccountForm, UserAccountAdditionalForm
+from .forms import TicketForm, UploadFileForm, CommentForm, SignupForm, UserProfileForm, UserProfileAdditionalForm,\
+    ProfileAvatarUploadFileForm
 
 
 def test(request, *args, **kwargs):
@@ -213,12 +216,71 @@ class UserAccountTicketsListView(LoginRequiredMixin, ListView):
         return queryset
 
 
+class UserAccountProfileInfoEditView(LoginRequiredMixin, View):
+    template_name = 'main/user_account_page_profile_info.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.user_obj = User.objects.select_related('user_profile').get(id=kwargs['pk'])
+        # check access rigths to the page
+        if kwargs['pk'] != request.user.id and request.user.is_authenticated:
+            raise PermissionDenied
+        return super(UserAccountProfileInfoEditView, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        context = {
+            'user_form': UserProfileForm(instance=self.user_obj),
+            'user_profile_form': UserProfileAdditionalForm(instance=self.user_obj.user_profile),
+            'user_avatar_form': ProfileAvatarUploadFileForm(),
+            'user_obj': self.user_obj
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        # check that email, username fields have not been changed by user
+        user_form_data = {
+            'username': self.user_obj.username,
+            'first_name': request.POST['first_name'],
+            'last_name': request.POST['last_name'],
+            'email': self.user_obj.email
+        }
+        user_form = UserProfileForm(user_form_data, instance=self.user_obj)
+        user_profile_form = UserProfileAdditionalForm(request.POST, instance=self.user_obj.user_profile)
+        if user_form.has_changed() or user_profile_form.has_changed():
+            if user_form.is_valid() and user_profile_form.is_valid():
+                user_form.save(user_form_data)
+                user_profile_form.save()
+        if request.FILES:
+            user_avatar_form = ProfileAvatarUploadFileForm(files=request.FILES)
+            if user_avatar_form.is_valid():
+                user_avatar_form.save(avatar=request.FILES['file'], user=self.user_obj)
+        else:
+            user_avatar_form = ProfileAvatarUploadFileForm()
+
+        if user_form.errors or user_profile_form.errors or user_avatar_form.errors:
+            context = {
+                'user_form': user_form,
+                'user_profile_form': user_profile_form,
+                'user_avatar_form': user_avatar_form,
+                'user_obj': self.user_obj
+            }
+            return render(request, self.template_name, context)
+
+        url = reverse('main:user_account_profile_info', kwargs={'pk': kwargs['pk']})
+        return HttpResponseRedirect(url)
+
+
 @login_required
 def check_file_permissions(request, *args, **kwargs):
-    perm_checker = ObjectPermissionChecker(request.user)
-    file_obj = get_object_or_404(File, file=request.path[7:])
-    if not perm_checker.has_perm('view_file', file_obj):
-        raise PermissionDenied
+    """
+    Check what type of file is requested:
+    - if a user avatar is requested (e.g. /media/user_profile/), we do not check access rights
+    - otherwise we check the file permissions
+    """
+    if not re.search(pattern=r'^media\/user_profile\/', string=request.path):
+        perm_checker = ObjectPermissionChecker(request.user)
+        file_obj = get_object_or_404(File, file=request.path[7:])
+        if not perm_checker.has_perm('view_file', file_obj):
+            raise PermissionDenied
     send = sendfile(request, filename=f'{os.getenv("SENDFILE_ROOT")}{request.path[7:]}', attachment=True)
     return send
 

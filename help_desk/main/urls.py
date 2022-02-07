@@ -13,6 +13,8 @@ urlpatterns = [
     path('accounts/logout/', views.HelpDeskLogoutView.as_view(), name='logout_page'),
     path('account/signup/', views.signup_page, name='signup_page'),
     path('accounts/useraccount/<int:pk>/',  views.UserAccountView.as_view(), name='user_account'),
+    path('accounts/useraccount/<int:pk>/tickets_list/', views.UserAccountTicketsListView.as_view(), name='user_account_tickets_list'),
+    path('accounts/useraccount/<int:pk>/profile_info', views.UserAccountProfileInfoEditView.as_view(), name='user_account_profile_info'),
     re_path(r'^media/.+', views.check_file_permissions, name='check_file_permissions'),
-    path('500/', views.http_response_server_error, name='http_500')
+    path('500/', views.http_response_server_error, name='http_500'),
 ]

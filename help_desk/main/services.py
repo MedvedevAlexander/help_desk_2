@@ -2,6 +2,10 @@ from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
+from django.conf import settings
+import os
+import os.path
+from django.contrib.contenttypes.models import ContentType
 
 from service_objects.services import Service
 
@@ -84,3 +88,20 @@ def check_file_download_permissions(file_link, user):
         'user_id': user.id
 
     })
+
+
+"""
+def_profile_avatar() - delete all user profile photos from storage and del avatar entry from DB
+used when the user uploads new avatar
+"""
+
+
+def del_profile_avatar(user, **kwargs):
+    # del file from storage
+    user_profile_dir = os.path.join(settings.MEDIA_ROOT, f'user_profile/{user.id}')
+    for file in os.listdir(user_profile_dir):
+        os.remove(os.path.join(user_profile_dir, file))
+    # del file entry in DB
+    content_type_id = int(ContentType.objects.get(model='userprofile', app_label='main').id)
+    avatars = File.objects.filter(object_id=user.user_profile.id, content_type_id=content_type_id)
+    avatars.delete()

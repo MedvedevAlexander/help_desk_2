@@ -13,12 +13,14 @@ class TextareaBootstrap(Textarea):
 
 
 class TextInputBootstrap(TextInput):
-    def __init__(self, placeholder=''):
+    def __init__(self, placeholder='', attrs={}):
         super(TextInputBootstrap, self).__init__()
         self.attrs = {
             'class': 'form-control',
             'placeholder': placeholder
         }
+        for key, value in attrs.items():
+            self.attrs[key] = value
 
 
 class SelectBootstrap(Select):
@@ -39,12 +41,14 @@ class ClearableFileInputBootstrap(ClearableFileInput):
 
 
 class EmailFieldBootstrap(EmailInput):
-    def __init__(self, placeholder=''):
+    def __init__(self, placeholder='', attrs={}):
         super(EmailFieldBootstrap, self).__init__()
         self.attrs = {
             'class': 'form-control',
             'placeholder': placeholder
         }
+        for key, value in attrs.items():
+            self.attrs[key] = value
 
 
 class PasswordInputBootstrap(PasswordInput):

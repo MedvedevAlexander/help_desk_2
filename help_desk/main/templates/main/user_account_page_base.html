@@ -6,7 +6,7 @@
     <div class="row">
         <div class="col-3 user_page_nav">
             <div class="list-group">
-                <a href="" class="list-group-item list-group-item-action">My profile</a>
+                <a href="{% url 'main:user_account_profile_info' request.user.id %}" class="list-group-item list-group-item-action">My profile</a>
                 <a href="{% url 'main:user_account_tickets_list' request.user.id %}" class="list-group-item list-group-item-action">My tickets</a>
                 <a href="#" class="list-group-item list-group-item-action disabled">Settings</a>
             </div>

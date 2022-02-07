@@ -56,7 +56,8 @@ class Ticket(models.Model):
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='ticket_author')
     category = models.ForeignKey(TicketCategory, on_delete=models.SET_NULL, null=True, related_name='ticket_category')
     priority = models.ForeignKey(TicketPriority, on_delete=models.SET_NULL, null=True, related_name='ticket_priority')
-    status = models.ForeignKey(TicketStatus, on_delete=models.SET_NULL, null=True, related_name='ticket_status')
+    status = models.ForeignKey(TicketStatus, on_delete=models.SET_NULL, null=True, related_name='ticket_status',
+                               default=TicketStatus.objects.get(name='Open').id)
     files = GenericRelation('File')
 
     def __str__(self):
@@ -99,10 +100,12 @@ NULL поля, в пользу GenericForeignKey, т.к. это создает �
 
 class File(models.Model):
     def get_file_path(self, *args, **kwargs):
-        if self.content_type.name == 'ticket':
+        if self.content_type.model == 'ticket':
             return f'ticket_attachments/{self.content_object.id}/{self.file.name}'
-        elif self.content_type.name == 'comment':
+        elif self.content_type.model == 'comment':
             return f'ticket_attachments/{self.content_object.ticket.id}/{self.file.name}'
+        elif self.content_type.model == 'userprofile':
+            return f'user_profile/{self.content_object.user.id}/{self.file.name}'
 
     file = models.FileField(blank=True, upload_to=get_file_path)
     file_name = models.CharField(max_length=255, null=True)
@@ -111,12 +114,15 @@ class File(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey(ct_field='content_type', fk_field='object_id')
 
+    def __str__(self):
+        return self.file_name
+
 
 class UserProfile(models.Model):
     organization = models.CharField(max_length=255)
     city = models.CharField(max_length=255)
-    position = models.CharField(max_length=255)
-    phone = models.CharField(max_length=255)
+    position = models.CharField(blank=True, max_length=255)
+    phone = models.CharField(blank=True, max_length=255)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='user_profile')
     photo = GenericRelation('File')
     is_helpdesk_employee = models.BooleanField(default=False)

@@ -18,3 +18,15 @@
 .header-user-tickets {
     float: left;
 }
+
+.profile_info_update_button {
+    margin-top: 2em;
+}
+
+.profile_info_select_file {
+    margin-top: 2em;
+}
+
+.profile_info_alert_warning {
+    margin-top: 1em;
+}
