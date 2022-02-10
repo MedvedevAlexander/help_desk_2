@@ -21,6 +21,7 @@ import magic
 from .models import News, Ticket, File, Comment, TicketCategory, TicketPriority
 from .forms import TicketForm, UploadFileForm, CommentForm, SignupForm, UserProfileForm, UserProfileAdditionalForm,\
     ProfileAvatarUploadFileForm
+from .services import assign_ticket_and_file_perms
 
 
 def test(request, *args, **kwargs):
@@ -122,6 +123,7 @@ class HelpDeskLogoutView(auth_views.LogoutView):
     pass
 
 
+"""
 @login_required
 def show_ticket(request, *args, **kwargs):
     ticket_id = kwargs['ticket_id']
@@ -166,6 +168,61 @@ def show_ticket(request, *args, **kwargs):
             'comments': comments
         }
     return render(request, 'main/show_ticket.html', context)
+"""
+
+
+class ShowTicket(LoginRequiredMixin, View):
+    template_name = 'main/show_ticket.html'
+
+    def setup(self, request, *args, **kwargs):
+        super(ShowTicket, self).setup(request, *args, **kwargs)
+        self.ticket_id = self.kwargs['ticket_id']
+        self.ticket_obj = ticket_obj = get_object_or_404(Ticket.objects.select_related('author', 'category', 'priority', 'status').
+                                   prefetch_related('files'), pk=self.ticket_id)
+        self.comments = Comment.objects.select_related('user').prefetch_related('files').filter(ticket=self.ticket_obj)
+
+    def dispatch(self, request, *args, **kwargs):
+        perm_checker = ObjectPermissionChecker(request.user)
+        if not perm_checker.has_perm('view_ticket', self.ticket_obj) and request.user.is_authenticated:
+            raise PermissionDenied
+        return super(ShowTicket, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        comment_form = CommentForm()
+        file_form = UploadFileForm()
+
+        context = {
+            'ticket': self.ticket_obj,
+            'comment_form': comment_form,
+            'file_form': file_form,
+            'comments': self.comments
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        comment_form_data = {
+            'text': request.POST['text'],
+            'ticket': self.ticket_id,
+            'user': request.user
+        }
+        comment_form = CommentForm(comment_form_data)
+        if comment_form.is_valid():
+            comment = comment_form.save()
+            for file in request.FILES.getlist('file'):
+                file_form = UploadFileForm(file)
+                file_obj = File.objects.create(file=file, file_name=file.name, file_size=file.size,
+                                               content_object=comment)
+                assign_ticket_and_file_perms(obj=file_obj, user=request.user, perm='view_file',
+                                             ticket=self.ticket_obj)
+        else:
+            context = {
+                'comment_form': comment_form
+            }
+            return render(request, self.template_name, context)
+
+        url = reverse('main:show_ticket', args=[self.ticket_id])
+
+        return HttpResponseRedirect(url)
 
 
 def signup_page(request, *args, **kwargs):

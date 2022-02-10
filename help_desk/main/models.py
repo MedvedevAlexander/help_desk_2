@@ -103,7 +103,7 @@ class File(models.Model):
         if self.content_type.model == 'ticket':
             return f'ticket_attachments/{self.content_object.id}/{self.file.name}'
         elif self.content_type.model == 'comment':
-            return f'ticket_attachments/{self.content_object.ticket.id}/{self.file.name}'
+            return f'ticket_attachments/{self.content_object.   ticket.id}/{self.file.name}'
         elif self.content_type.model == 'userprofile':
             return f'user_profile/{self.content_object.user.id}/{self.file.name}'
 

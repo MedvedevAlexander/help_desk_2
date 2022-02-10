@@ -1,11 +1,14 @@
 from django import forms
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, HttpResponseRedirect
 from django.conf import settings
 import os
 import os.path
 from django.contrib.contenttypes.models import ContentType
+from guardian.shortcuts import assign_perm
+from guardian.core import ObjectPermissionChecker
+from django.urls import reverse
 
 from service_objects.services import Service
 
@@ -90,14 +93,15 @@ def check_file_download_permissions(file_link, user):
     })
 
 
-"""
-def_profile_avatar() - delete all user profile photos from storage and del avatar entry from DB
-used when the user uploads new avatar
-"""
-
-
 def del_profile_avatar(user, **kwargs):
-    # del file from storage
+    """
+    Delete all user profile photos from storage and del avatar entry from DB
+    used when the user uploads new avatar
+
+    :param user: User object
+    :param kwargs:
+    :return:
+    """
     user_profile_dir = os.path.join(settings.MEDIA_ROOT, f'user_profile/{user.id}')
     for file in os.listdir(user_profile_dir):
         os.remove(os.path.join(user_profile_dir, file))
@@ -105,3 +109,28 @@ def del_profile_avatar(user, **kwargs):
     content_type_id = int(ContentType.objects.get(model='userprofile', app_label='main').id)
     avatars = File.objects.filter(object_id=user.user_profile.id, content_type_id=content_type_id)
     avatars.delete()
+
+
+def assign_ticket_and_file_perms(obj, user, perm, ticket):
+    """
+    Adds user access rights to files and tickets.
+
+    Adds the following permissions:
+    1. Allows access to the user who added the file/ticket.
+    2. Allows access to the file/ticket category administrator group.
+
+    :param obj: Access object
+    :param user: User object to be granted access
+    :param perm: String that contains the codename of permission
+    :param ticket: Ticket object
+    :return:
+    """
+    if user.id == ticket.author.id:
+        assign_perm(perm=perm, user_or_group=user, obj=obj)
+    else:
+        assign_perm(perm=perm, user_or_group=User.objects.get(id=ticket.author.id), obj=obj)
+    try:
+        assign_perm(perm=perm, user_or_group=Group.objects.get(name=f'{ticket.category.codename}_admins'), obj=obj)
+    except Group.DoesNotExist as e:
+        url = reverse('main:http_500')
+        return HttpResponseRedirect(url)
