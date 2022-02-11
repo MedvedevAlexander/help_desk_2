@@ -24,7 +24,8 @@ class TicketForm(ModelForm):
             'author': HiddenInput()
         }
         labels = {
-            'title': 'Theme'
+            'title': 'Theme',
+            'author': 'Author'
         }
 
 
@@ -123,4 +124,14 @@ class UserProfileAdditionalForm(ModelForm):
             'city': TextInputBootstrap(placeholder='Enter the name of your city'),
             'position': TextInputBootstrap(placeholder='Enter your position'),
             'phone': TextInputBootstrap(placeholder='Enter your contact phone number')
+        }
+
+
+class UpdateTicketStatusForm(ModelForm):
+    class Meta:
+        model = Ticket
+        fields = ['priority', 'status']
+        widgets = {
+            'priority': SelectBootstrap(),
+            'status': SelectBootstrap()
         }

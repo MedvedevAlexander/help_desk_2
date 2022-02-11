@@ -20,7 +20,7 @@ import magic
 
 from .models import News, Ticket, File, Comment, TicketCategory, TicketPriority
 from .forms import TicketForm, UploadFileForm, CommentForm, SignupForm, UserProfileForm, UserProfileAdditionalForm,\
-    ProfileAvatarUploadFileForm
+    ProfileAvatarUploadFileForm, UpdateTicketStatusForm
 from .services import assign_ticket_and_file_perms
 
 
@@ -190,12 +190,14 @@ class ShowTicket(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         comment_form = CommentForm()
         file_form = UploadFileForm()
+        ticket_status_form = UpdateTicketStatusForm(instance=self.ticket_obj)
 
         context = {
             'ticket': self.ticket_obj,
             'comment_form': comment_form,
             'file_form': file_form,
-            'comments': self.comments
+            'comments': self.comments,
+            'ticket_status_form': ticket_status_form
         }
         return render(request, self.template_name, context)
 
@@ -220,9 +222,8 @@ class ShowTicket(LoginRequiredMixin, View):
             }
             return render(request, self.template_name, context)
 
-        url = reverse('main:show_ticket', args=[self.ticket_id])
-
-        return HttpResponseRedirect(url)
+        ticket_url = reverse('main:show_ticket', args=[self.ticket_id])
+        return HttpResponseRedirect(ticket_url)
 
 
 def signup_page(request, *args, **kwargs):
@@ -345,3 +346,24 @@ def check_file_permissions(request, *args, **kwargs):
 def http_response_server_error(request, *args, **kwargs):
 
     return render(request, '500.html', status=500)
+
+
+class UpdateTicketStatus(LoginRequiredMixin, View):
+    def dispatch(self, request, *args, **kwargs):
+        perm_checker = ObjectPermissionChecker(request.user)
+        if not perm_checker.has_perm('view_ticket', self.ticket_obj) and request.user.is_authenticated:
+            raise PermissionDenied
+        return super(UpdateTicketStatus, self).dispatch(request, *args, **kwargs)
+
+    def setup(self, request, *args, **kwargs):
+        super(UpdateTicketStatus, self).setup(request, *args, **kwargs)
+        self.ticket_id = self.kwargs['ticket_id']
+        self.ticket_obj = ticket_obj = get_object_or_404(
+            Ticket.objects.select_related('priority', 'status'), pk=self.ticket_id)
+
+    def post(self, request, *args, **kwargs):
+        ticket_status_form = UpdateTicketStatusForm(request.POST, instance=self.ticket_obj)
+        if ticket_status_form.has_changed() and ticket_status_form.is_valid():
+            ticket_status_form.save()
+        ticket_url = reverse('main:show_ticket', args=[self.ticket_id])
+        return HttpResponseRedirect(ticket_url)

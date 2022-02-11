@@ -4,15 +4,22 @@
     <div class="container">
         <div class="row">
             <div class="col-12">
-                <div class="jumbotron">
-            <h1 class="display-5"> {{ ticket.title }}</h1>
-                    <div>Ticket status {{ ticket.status }}</div>
-                    <div>Ticket author {{ ticket.author }}</div>
-                    <div>{{ ticket.added_at }}</div>
-                    <div> Priority: {{ ticket.priority }}</div>
-                    <div> Category: {{ ticket.category }}</div>
-                    <div> <strong> Ticket description: </strong></div>
-                    <div> {{ ticket.text }}</div>
+                <div class="jumbotron ticket_description">
+                    <h1 class="display-5">{{ ticket.title }}</h1>
+                    <div><strong>Creation date:</strong> {{ticket.added_at}}</div>
+                    <div> <strong>Author:</strong> {{ ticket.author }}</div>
+                    <div><strong>Category:</strong> {{ ticket.category }}</div>
+                    <div> <strong> Ticket description:</strong> {{ticket.text}}</div>
+                    <form method="post" action="{% url 'main:update_ticket_status' ticket.id%}" enctype="application/x-www-form-urlencoded">
+                        {% csrf_token %}
+                        <strong>{{ticket_status_form.priority.label}}</strong>{{ticket_status_form.priority}}
+                        <strong>{{ticket_status_form.status.label}}</strong>{{ticket_status_form.status}}
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" style="margin-top: 2em">
+                                Update
+                            </button>
+                        </div>
+                    </form>
                     <div class="ticket_attachments" style="display: flex; justify-content: flex-end">
                         {% for file in ticket.files.all %}
                             <span class="attached_file" style="margin-right: 1em">
