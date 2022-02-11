@@ -125,6 +125,7 @@ def assign_ticket_and_file_perms(obj, user, perm, ticket):
     :param ticket: Ticket object
     :return:
     """
+
     if user.id == ticket.author.id:
         assign_perm(perm=perm, user_or_group=user, obj=obj)
     else:

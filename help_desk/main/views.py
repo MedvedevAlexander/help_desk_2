@@ -70,6 +70,7 @@ def main_page(request, *args, **kwargs):
     return render(request, 'main/index.html', context)
 
 
+"""
 @login_required
 def create_ticket(request, *args, **kwargs):
     if request.method == 'POST':
@@ -113,6 +114,7 @@ def create_ticket(request, *args, **kwargs):
         'file_form': file_form
     }
     return render(request, 'main/add_ticket.html', context)
+"""
 
 
 class HelpDeskLoginView(auth_views.LoginView):
@@ -121,6 +123,41 @@ class HelpDeskLoginView(auth_views.LoginView):
 
 class HelpDeskLogoutView(auth_views.LogoutView):
     pass
+
+
+class CreateTicket(LoginRequiredMixin, View):
+    template_name = 'main/add_ticket.html'
+
+    def get(self, request, *args, **kwargs):
+        form = TicketForm()
+        file_form = UploadFileForm()
+
+        context = {
+            'form': form,
+            'file_form': file_form
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        ticket_form_data = {
+            'text': request.POST['text'],
+            'title': request.POST['title'],
+            'category': request.POST['category'],
+            'priority': request.POST['priority'],
+            'author': User.objects.get(username=request.user)
+        }
+        form = TicketForm(ticket_form_data)
+        if form.is_valid():
+            ticket = form.save()
+            assign_ticket_and_file_perms(obj=ticket, user=request.user, perm='view_ticket',
+                                         ticket=ticket)
+            for file in request.FILES.getlist('file'):
+                file_obj = File.objects.create(file=file, file_name=file.name, file_size=file.size,
+                                               content_object=ticket)
+                assign_ticket_and_file_perms(obj=file_obj, user=request.user, perm='view_file',
+                                             ticket=ticket)
+            url = reverse('main:show_ticket', args=[ticket.id])
+            return HttpResponseRedirect(url)
 
 
 """
